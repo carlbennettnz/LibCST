@@ -28,12 +28,12 @@ class StripStringsCommand(VisitorBasedCodemodCommand):
     @m.call_if_not_inside(
         m.Subscript(
             # We could match on value=m.Name("Literal") here, but then we might miss
-            # instances where people are importing typing_extensions directly, or
-            # importing Literal as an alias.
+            # instances where people are importing typing directly, or importing Literal
+            # as an alias.
             value=m.MatchMetadataIfTrue(
                 QualifiedNameProvider,
                 lambda qualnames: any(
-                    qualname.name == "typing_extensions.Literal"
+                    qualname.name == "typing.Literal"
                     for qualname in qualnames
                 ),
             )
