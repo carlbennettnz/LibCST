@@ -9,9 +9,20 @@ import libcst as cst
 import libcst.matchers as m
 from libcst.codemod._context import CodemodContext
 from libcst.codemod._visitor import ContextAwareVisitor
+from libcst.matchers import call_if_not_inside
 from libcst.metadata import MetadataWrapper, QualifiedNameProvider
 
 FUNCS_CONSIDERED_AS_STRING_ANNOTATIONS = {"typing.TypeVar"}
+
+LiteralSubscript = m.Subscript(
+    # We could match on value=m.Name("Literal") here, but then we might miss
+    # instances where people are importing typing_extensions directly, or
+    # importing Literal as an alias.
+    value=m.MatchMetadataIfTrue(
+        QualifiedNameProvider,
+        lambda qualnames: any(qualname.name == "typing.Literal" for qualname in qualnames),
+    )
+)
 
 
 class GatherNamesFromStringAnnotationsVisitor(ContextAwareVisitor):
@@ -60,6 +71,7 @@ class GatherNamesFromStringAnnotationsVisitor(ContextAwareVisitor):
             self.handle_any_string(node)
         return False
 
+    @call_if_not_inside(LiteralSubscript)
     def visit_SimpleString(self, node: cst.SimpleString) -> bool:
         if self._annotation_stack:
             self.handle_any_string(node)
